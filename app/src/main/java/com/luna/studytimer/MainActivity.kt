@@ -303,6 +303,7 @@ fun AppContent() {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsBottomSheet(
     studyTime: Int,
