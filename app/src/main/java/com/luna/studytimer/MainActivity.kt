@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.luna.studytimer.ui.theme.StudytimerTheme
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -72,8 +73,12 @@ fun TodoListScreen() {
 
 @Composable
 fun PomodoroScreen() {
+    var studyTime by remember { mutableStateOf(25*60) }
+    var breakTime by remember { mutableStateOf(5*60) }
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
+    var isStudySession by remember { mutableStateOf(true) }
+    var sessionCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(isRunning) {
         while (isRunning) {
@@ -81,19 +86,46 @@ fun PomodoroScreen() {
             if (timeLeft > 0) {
                 timeLeft--
             } else {
+                if (isStudySession) {
+                    isStudySession = false
+                    timeLeft = breakTime
+                } else {
+                    isStudySession = true
+                    timeLeft = studyTime
+                    sessionCount++
+                }
                 isRunning = false
             }
         }
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("${timeLeft/60}:${(timeLeft % 60).toString().padStart(2, '0')}", style = typography.displayLarge)
-        Row {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            "${timeLeft/60}:${(timeLeft % 60).toString().padStart(2, '0')}",
+            style = typography.displayLarge
+        )
+
+        Row (
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Button(onClick = { isRunning = !isRunning }) {
                 Text(if (isRunning) "Pause" else "Start")
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { timeLeft = 25*60; isRunning = false }) {
+            Button(
+                onClick = {
+                    if (isStudySession) {
+                        timeLeft = studyTime
+                    } else {
+                        timeLeft = breakTime
+                    }
+                    isRunning = false
+                }
+            ) {
                 Text("Reset")
             }
         }
