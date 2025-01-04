@@ -1,7 +1,8 @@
 package com.luna.studytimer
 
-import com.luna.studytimer.MainActivity
-import com.luna.studytimer.TodoListScreen
+// archived
+
+import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,9 +21,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -94,35 +98,25 @@ fun PomodoroScreen() {
                 modifier = Modifier.padding(16.dp)
             )
 
-            Box(contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.size(200.dp)) {
-                    drawArc(
-                        color = Color.hsv(5f, 5f, 5f),
-                        startAngle = -90f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                }
-
-                Canvas(modifier = Modifier.size(200.dp)) {
-                    var sweepAngle = (1 - timeLeft.toFloat() / if (isStudySession) studyTime else breakTime)
-                    drawArc(
-                        color = if (isStudySession) Color.Red else Color.Green,
-                        startAngle = -90f,
-                        sweepAngle = sweepAngle,
-                        useCenter = false,
-                        style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                }
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    progress = { timeLeft.toFloat() / if (isStudySession) studyTime else breakTime },
+                    modifier = Modifier
+                        .size(290.dp)
+                        .offset(y = (-5).dp)
+                    ,
+                    color = if (isStudySession) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                    strokeWidth = 12.dp,
+                    strokeCap = StrokeCap.Round
+                )
 
                 Text(
                     "${timeLeft / 60}:${(timeLeft % 60).toString().padStart(2, '0')}",
                     style = typography.displayLarge
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -146,56 +140,19 @@ fun PomodoroScreen() {
             }
 
             if (showSettings) {
-                BottomSheetDialog(onDismissRequest = { showSettings = false }) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Settings", style = typography.headlineMedium)
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Study time (mins)", fontSize = 14.sp)
-                            TextField(
-                                value = (studyTime / 60).toString(),
-                                onValueChange = {
-                                    val newValue = it.toIntOrNull() ?: 25
-                                    studyTime = newValue * 60
-                                    if (isStudySession) timeLeft = studyTime - timeLeft
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Break time (mins)", fontSize = 14.sp)
-                            TextField(
-                                value = (breakTime / 60).toString(),
-                                onValueChange = {
-                                    val newValue = it.toIntOrNull() ?: 5
-                                    breakTime = newValue * 60
-                                    if (isStudySession) timeLeft = breakTime - timeLeft
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showSettings = false },
-                    ) {
-                        Text("close")
-                    }
-                }
+                SettingsBottomSheet(
+                    studyTime = studyTime,
+                    breakTime = breakTime,
+                    onStudyTimeChange = {
+                        studyTime = it
+                        if (isStudySession) timeLeft = studyTime - timeLeft
+                    },
+                    onBreakTimeChange =  {
+                        breakTime = it
+                        if (!isStudySession) timeLeft = breakTime - timeLeft
+                    },
+                    onClose = { showSettings = false }
+                )
             }
         }
     }
@@ -212,13 +169,64 @@ fun PomodoroScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomSheetDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+fun SettingsBottomSheet(
+    studyTime: Int,
+    breakTime: Int,
+    onStudyTimeChange: (Int) -> Unit,
+    onBreakTimeChange: (Int) -> Unit,
+    onClose: () -> Unit
+) {
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = onClose,
         sheetState = rememberModalBottomSheetState(),
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     ) {
-        content()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Settings", style = typography.headlineMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Study time (mins)", fontSize = 14.sp)
+                TextField(
+                    value = (studyTime / 60).toString(),
+                    onValueChange = {
+                        val newValue = it.toIntOrNull() ?: 25
+                        onStudyTimeChange(newValue*60)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Break time (mins)", fontSize = 14.sp)
+                TextField(
+                    value = (breakTime / 60).toString(),
+                    onValueChange = {
+                        val newValue = it.toIntOrNull() ?: 5
+                        onBreakTimeChange(newValue * 60)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onClose,
+        ) {
+            Text("Save settings")
+        }
     }
 }
 
