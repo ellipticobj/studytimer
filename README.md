@@ -1,5 +1,5 @@
 # material pomodoro
-this is a small project of mine for me to practice my android development skills.
-it is currently a gigantic wip
+a material you pomodoro timer made using jetpack compose
 
-run gradlew to build
+# building
+run `git clone http://github.com/ellipticobj/studytimer.git` then `cd ./studytimer` and `./gradlew assembleRelease`
