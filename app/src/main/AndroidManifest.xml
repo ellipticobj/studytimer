@@ -15,7 +15,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher"
             android:theme="@style/Theme.Studytimer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
