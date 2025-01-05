@@ -21,13 +21,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -35,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -98,7 +104,7 @@ fun AppContent() {
     Scaffold(
         topBar = {
             MediumTopAppBar(
-                title = { Text("Pomodoro timer") },
+                title = { Text(if (isStudySession) "Study time" else "Break time") },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary
@@ -116,7 +122,7 @@ fun AppContent() {
             Spacer(modifier = Modifier.height(30.dp))
 
             Text(
-                text = if (isStudySession) "Study time" else "Break time",
+                text = "Session $sessionCount",
                 style = typography.headlineSmall
             )
 
@@ -140,41 +146,61 @@ fun AppContent() {
             }
 
             Spacer(modifier = Modifier.height(30.dp))
-            Text("total time: $totalTime")
-
+            Text("Total time: ${totalTime / 60} minutes")
             Spacer(modifier = Modifier.height(30.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Button(
-                    onClick = {
-                        if (isRunning) {
-                            isRunning = false
-                            isPaused = true
-                        } else {
-                            isRunning = true
-                            isPaused = false
-                        }
-                    },
+            if (isRunning) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 30.dp, end = 30.dp)
-                        .height(60.dp),
-                    shape = RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = 4.dp,
-                        bottomEnd = 4.dp
-                    )
                 ) {
-                    Text(if (isRunning) "Pause" else if (isPaused) "Resume" else "Start")
-                }
+                    Row {
+                        Button(
+                            onClick = {
+                                isRunning = false
+                                isPaused = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth(.65f)
+                                .padding(start = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 4.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            Text("Pause")
+                        }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
 
-                if (isRunning) {
+                        Button(
+                            onClick = {
+                                sessionCount++
+                                timeLeft = studyTime
+                                totalTime = studyTime
+                                isStudySession = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 4.dp,
+                                topEnd = 16.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            // Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                            Text("Next session")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -188,13 +214,13 @@ fun AppContent() {
                                     totalTime = studyTime
                                 } else {
                                     timeLeft = breakTime
-                                    totalTime = studyTime
+                                    totalTime = breakTime
                                 }
 
                                 isPaused = false
                             },
                             modifier = Modifier
-                                .fillMaxWidth(0.7f)
+                                .fillMaxWidth(0.65f)
                                 .padding(start = 30.dp)
                                 .height(60.dp),
                             shape = RoundedCornerShape(
@@ -228,7 +254,59 @@ fun AppContent() {
                             Text("+1 min")
                         }
                     }
-                } else if (isPaused) {
+                }
+            } else if (isPaused) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Row {
+                        Button(
+                            onClick = {
+                                isRunning = true
+                                isPaused = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth(.65f)
+                                .padding(start = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 4.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            Text("Resume")
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Button(
+                            onClick = {
+                                sessionCount++
+                                timeLeft = studyTime
+                                totalTime = studyTime
+                                isStudySession = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 4.dp,
+                                topEnd = 16.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            // Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                            Text("Next session")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Button(
                         onClick = {
                             isRunning = false
@@ -245,7 +323,7 @@ fun AppContent() {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 30.dp)
+                            .padding(start = 30.dp, end = 30.dp)
                             .height(60.dp),
                         shape = RoundedCornerShape(
                             topStart = 4.dp,
@@ -256,7 +334,61 @@ fun AppContent() {
                     ) {
                         Text("Reset")
                     }
-                } else {
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Row {
+                        Button(
+                            onClick = {
+                                isRunning = true
+                                isPaused = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth(.65f)
+                                .padding(start = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 4.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            Text("Start")
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Button(
+                            onClick = {
+                                sessionCount++
+                                timeLeft = studyTime
+                                totalTime = studyTime
+                                isStudySession = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 30.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(
+                                topStart = 4.dp,
+                                topEnd = 16.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 4.dp
+                            )
+                        ) {
+                            // Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                            Text("Next session")
+                        }
+
+                    }
+
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Button(
                         onClick = { showSettings = true },
                         modifier = Modifier
@@ -270,28 +402,46 @@ fun AppContent() {
                             bottomEnd = 16.dp
                         ),
                     ) {
-                        Text("Change time")
+                        Text("Settings")
                     }
                 }
             }
+        }
 
-            if (showSettings) {
-                SettingsBottomSheet(
-                    studyTime = studyTime,
-                    breakTime = breakTime,
-                    onStudyTimeChange = {
-                        studyTime = it
-                        if (isStudySession) timeLeft = studyTime - timeLeft
-                    },
-                    onBreakTimeChange = {
-                        breakTime = it
-                        if (!isStudySession) timeLeft = breakTime - timeLeft
-                    },
-                    onClose = { showSettings = false }
-                )
-            }
+        if (showSettings) {
+            SettingsBottomSheet(
+                studyTime = studyTime,
+                breakTime = breakTime,
+                onStudyTimeChange = {
+                    studyTime = it
+                    if (isStudySession) {
+                        timeLeft = studyTime
+                        totalTime = studyTime
+                    }
+                },
+                onBreakTimeChange = {
+                    breakTime = it
+                    if (!isStudySession) {
+                        timeLeft = breakTime
+                        totalTime = breakTime
+                    }
+                },
+                onClose = { showSettings = false },
+                onResetAll = {
+                    studyTime = 25 * 60
+                    breakTime = 5 * 60
+                    timeLeft = 25 * 60
+                    totalTime = 25 * 60
+                    sessionCount = 0
+                    isRunning = false
+                    isPaused = false
+                    isStudySession = true
+                    showSettings = false
+                }
+            )
         }
     }
+
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -310,12 +460,17 @@ fun SettingsBottomSheet(
     breakTime: Int,
     onStudyTimeChange: (Int) -> Unit,
     onBreakTimeChange: (Int) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onResetAll: () -> Unit
 ) {
+    var studyTimeInput by remember { mutableStateOf((studyTime / 60).toString()) }
+    var breakTimeInput by remember { mutableStateOf((breakTime / 60).toString()) }
+
     ModalBottomSheet(
         onDismissRequest = onClose,
-        sheetState = rememberModalBottomSheetState(),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        modifier = Modifier,
     ) {
         Column(
             modifier = Modifier
@@ -331,38 +486,92 @@ fun SettingsBottomSheet(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Study time (mins)", fontSize = 14.sp)
                 TextField(
-                    value = (studyTime / 60).toString(),
+                    value = studyTimeInput,
                     onValueChange = {
-                        val newValue = it.toIntOrNull() ?: 25
-                        onStudyTimeChange(newValue * 60)
+                        studyTimeInput = it
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 30.dp, end = 30.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Break time (mins)", fontSize = 14.sp)
                 TextField(
-                    value = (breakTime / 60).toString(),
+                    value = breakTimeInput,
                     onValueChange = {
-                        val newValue = it.toIntOrNull() ?: 5
-                        onBreakTimeChange(newValue * 60)
+                        breakTimeInput = it
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 30.dp, end = 30.dp)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
-        Button(
-            onClick = onClose
-        ) {
-            Text("Save settings")
+            Row(
+
+            ) {
+                Button(
+                    onClick = {
+                        val studyTimeValue = studyTimeInput.toIntOrNull()
+                        val breakTimeValue = breakTimeInput.toIntOrNull()
+
+                        if (studyTimeValue != null && studyTimeValue > 0) {
+                            onStudyTimeChange(studyTimeValue * 60)
+                        }
+
+                        if (breakTimeValue != null && breakTimeValue > 0) {
+                            onBreakTimeChange(breakTimeValue * 60)
+                        }
+
+                        onClose()
+                    },
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 4.dp,
+                        bottomStart = 16.dp,
+                        bottomEnd = 4.dp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(.65f)
+                        .padding(start = 30.dp)
+                        .height(60.dp)
+                ) {
+                    Text("Confirm")
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        onResetAll()
+                    },
+                    shape = RoundedCornerShape(
+                        topStart = 4.dp,
+                        topEnd = 16.dp,
+                        bottomStart = 4.dp,
+                        bottomEnd = 16.dp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 30.dp)
+                        .height(60.dp)
+                ) {
+                    Text(
+                        "Reset all",
+                        color = Color.Red,
+                    )
+                }
+            }
         }
     }
 }
