@@ -74,7 +74,7 @@ fun AppContent() {
     var isRunning by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     var isStudySession by remember { mutableStateOf(true) }
-    var sessionCount by remember { mutableIntStateOf(0) }
+    var sessionCount by remember { mutableIntStateOf(1) }
     var showSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(isRunning) {
@@ -428,7 +428,7 @@ fun AppContent() {
                     breakTime = 5 * 60
                     timeLeft = 25 * 60
                     totalTime = 25 * 60
-                    sessionCount = 0
+                    sessionCount = 1
                     isRunning = false
                     isPaused = false
                     isStudySession = true
