@@ -10,3 +10,8 @@ git clone
 `git clone http://github.com/ellipticobj/studytimer.git`  
 then  
 `cd ./studytimer && ./gradlew assembleRelease`  
+
+# roadmap
+notification with time left, current session and session count
+landscape mode?
+device lock

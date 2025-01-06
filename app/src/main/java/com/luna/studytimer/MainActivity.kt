@@ -3,6 +3,7 @@
 package com.luna.studytimer
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,10 +65,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun AppContent() {
+    val configuration = LocalConfiguration.current
+
+    // Check the device orientation
+    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        LandscapeLayout()
+    } else {
+        PortraitLayout()
+    }
+}
+
+@Composable
+fun LandscapeLayout() {
+    PortraitLayout()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AppContent() {
+fun PortraitLayout() {
     var studyTime by remember { mutableIntStateOf(25 * 60) }
     var breakTime by remember { mutableIntStateOf(5 * 60) }
     var timeLeft by remember { mutableIntStateOf(25 * 60) }
