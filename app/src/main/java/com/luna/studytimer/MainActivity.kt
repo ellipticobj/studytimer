@@ -1,9 +1,8 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.luna.studytimer
+package com.luna.viewModel.studyTimer
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,7 +37,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,8 +48,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import com.luna.studytimer.ui.theme.StudytimerTheme
 import kotlinx.coroutines.delay
+
+class studyTimerViewModel : ViewModel() {
+    var studyTime by mutableStateOf(25 * 60)
+    var breakTime by mutableStateOf(5 * 60)
+    var timeLeft by mutableStateOf(25 * 60)
+    var totalTime by mutableStateOf(25 * 60)
+    var isRunning by mutableStateOf(false)
+    var isPaused by mutableStateOf(false)
+    var isStudySession by mutableStateOf(true)
+    var sessionCount by mutableStateOf(1)
+    var showSettings by mutableStateOf(false)
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,58 +70,50 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             StudytimerTheme {
-                AppContent()
+                AppContent(viewModel = studyTimerViewModel())
             }
         }
     }
 }
 
 @Composable
-fun AppContent() {
-    val configuration = LocalConfiguration.current
+fun AppContent(viewModel: studyTimerViewModel) {
+    var configuration = LocalConfiguration.current
+    println(configuration)
+    println(configuration.orientation)
+    println(configuration.orientation == 2)
 
-    // Check the device orientation
-    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        LandscapeLayout()
+    if (configuration.orientation == 2) {
+        LandscapeLayout(viewModel)
     } else {
-        PortraitLayout()
+        PortraitLayout(viewModel)
     }
 }
 
 @Composable
-fun LandscapeLayout() {
-    PortraitLayout()
+fun LandscapeLayout(viewModel: studyTimerViewModel) {
+    PortraitLayout(viewModel)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun PortraitLayout() {
-    var studyTime by remember { mutableIntStateOf(25 * 60) }
-    var breakTime by remember { mutableIntStateOf(5 * 60) }
-    var timeLeft by remember { mutableIntStateOf(25 * 60) }
-    var totalTime by remember { mutableIntStateOf(25 * 60) }
-    var isRunning by remember { mutableStateOf(false) }
-    var isPaused by remember { mutableStateOf(false) }
-    var isStudySession by remember { mutableStateOf(true) }
-    var sessionCount by remember { mutableIntStateOf(1) }
-    var showSettings by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isRunning) {
-        while (isRunning) {
+fun PortraitLayout(viewModel: studyTimerViewModel) {
+    LaunchedEffect(viewModel.isRunning) {
+        while (viewModel.isRunning) {
             delay(1000L)
-            if (timeLeft > 0) {
-                timeLeft--
+            if (viewModel.timeLeft > 0) {
+                viewModel.timeLeft--
             } else {
-                if (isStudySession) {
-                    isStudySession = false
-                    timeLeft = breakTime
-                    totalTime = breakTime
+                if (viewModel.isStudySession) {
+                    viewModel.isStudySession = false
+                    viewModel.timeLeft = viewModel.breakTime
+                    viewModel.totalTime = viewModel.breakTime
                 } else {
-                    isStudySession = true
-                    timeLeft = studyTime
-                    totalTime = studyTime
-                    sessionCount++
+                    viewModel.isStudySession = true
+                    viewModel.timeLeft = viewModel.studyTime
+                    viewModel.totalTime = viewModel.studyTime
+                    viewModel.sessionCount++
                 }
             }
         }
@@ -119,7 +122,7 @@ fun PortraitLayout() {
     Scaffold(
         topBar = {
             MediumTopAppBar(
-                title = { Text(if (isStudySession) "Study time" else "Break time") },
+                title = { Text(if (viewModel.isStudySession) "Study time" else "Break time") },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary
@@ -137,7 +140,7 @@ fun PortraitLayout() {
             Spacer(modifier = Modifier.height(30.dp))
 
             Text(
-                text = "Session $sessionCount",
+                text = "Session ${viewModel.sessionCount}",
                 style = typography.headlineSmall
             )
 
@@ -147,24 +150,24 @@ fun PortraitLayout() {
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
-                    progress = { if (totalTime > 0) timeLeft.toFloat() / totalTime else 0f },
+                    progress = { if (viewModel.totalTime > 0) viewModel.timeLeft.toFloat() / viewModel.totalTime else 0f },
                     modifier = Modifier
                         .size(290.dp),
-                    color = if (isStudySession) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                    color = if (viewModel.isStudySession) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                     strokeWidth = 12.dp
                 )
 
                 Text(
-                    "${timeLeft / 60}:${(timeLeft % 60).toString().padStart(2, '0')}",
+                    "${viewModel.timeLeft / 60}:${(viewModel.timeLeft % 60).toString().padStart(2, '0')}",
                     style = typography.displayLarge
                 )
             }
 
             Spacer(modifier = Modifier.height(30.dp))
-            Text("Total time: ${totalTime / 60} minutes")
+            Text("Total time: ${viewModel.totalTime / 60} minutes")
             Spacer(modifier = Modifier.height(30.dp))
 
-            if (isRunning) {
+            if (viewModel.isRunning) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -172,8 +175,8 @@ fun PortraitLayout() {
                     Row {
                         Button(
                             onClick = {
-                                isRunning = false
-                                isPaused = true
+                                viewModel.isRunning = false
+                                viewModel.isPaused = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth(.65f)
@@ -193,10 +196,10 @@ fun PortraitLayout() {
 
                         Button(
                             onClick = {
-                                sessionCount++
-                                timeLeft = studyTime
-                                totalTime = studyTime
-                                isStudySession = true
+                                viewModel.sessionCount++
+                                viewModel.timeLeft = viewModel.studyTime
+                                viewModel.totalTime = viewModel.studyTime
+                                viewModel.isStudySession = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -222,17 +225,17 @@ fun PortraitLayout() {
                     ) {
                         Button(
                             onClick = {
-                                isRunning = false
+                                viewModel.isRunning = false
 
-                                if (isStudySession) {
-                                    timeLeft = studyTime
-                                    totalTime = studyTime
+                                if (viewModel.isStudySession) {
+                                    viewModel.timeLeft = viewModel.studyTime
+                                    viewModel.totalTime = viewModel.studyTime
                                 } else {
-                                    timeLeft = breakTime
-                                    totalTime = breakTime
+                                    viewModel.timeLeft = viewModel.breakTime
+                                    viewModel.totalTime = viewModel.breakTime
                                 }
 
-                                isPaused = false
+                                viewModel.isPaused = false
                             },
                             modifier = Modifier
                                 .fillMaxWidth(0.65f)
@@ -252,8 +255,8 @@ fun PortraitLayout() {
 
                         Button(
                             onClick = {
-                                timeLeft += 60
-                                totalTime += 60
+                                viewModel.timeLeft += 60
+                                viewModel.totalTime += 60
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -270,7 +273,7 @@ fun PortraitLayout() {
                         }
                     }
                 }
-            } else if (isPaused) {
+            } else if (viewModel.isPaused) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -278,8 +281,8 @@ fun PortraitLayout() {
                     Row {
                         Button(
                             onClick = {
-                                isRunning = true
-                                isPaused = false
+                                viewModel.isRunning = true
+                                viewModel.isPaused = false
                             },
                             modifier = Modifier
                                 .fillMaxWidth(.65f)
@@ -299,10 +302,10 @@ fun PortraitLayout() {
 
                         Button(
                             onClick = {
-                                sessionCount++
-                                timeLeft = studyTime
-                                totalTime = studyTime
-                                isStudySession = true
+                                viewModel.sessionCount++
+                                viewModel.timeLeft = viewModel.studyTime
+                                viewModel.totalTime = viewModel.studyTime
+                                viewModel.isStudySession = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -324,17 +327,17 @@ fun PortraitLayout() {
 
                     Button(
                         onClick = {
-                            isRunning = false
+                            viewModel.isRunning = false
 
-                            if (isStudySession) {
-                                timeLeft = studyTime
-                                totalTime = studyTime
+                            if (viewModel.isStudySession) {
+                                viewModel.timeLeft = viewModel.studyTime
+                                viewModel.totalTime = viewModel.studyTime
                             } else {
-                                timeLeft = breakTime
-                                totalTime = studyTime
+                                viewModel.timeLeft = viewModel.breakTime
+                                viewModel.totalTime = viewModel.studyTime
                             }
 
-                            isPaused = false
+                            viewModel.isPaused = false
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -358,8 +361,8 @@ fun PortraitLayout() {
                     Row {
                         Button(
                             onClick = {
-                                isRunning = true
-                                isPaused = false
+                                viewModel.isRunning = true
+                                viewModel.isPaused = false
                             },
                             modifier = Modifier
                                 .fillMaxWidth(.65f)
@@ -379,10 +382,10 @@ fun PortraitLayout() {
 
                         Button(
                             onClick = {
-                                sessionCount++
-                                timeLeft = studyTime
-                                totalTime = studyTime
-                                isStudySession = true
+                                viewModel.sessionCount++
+                                viewModel.timeLeft = viewModel.studyTime
+                                viewModel.totalTime = viewModel.studyTime
+                                viewModel.isStudySession = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -405,7 +408,7 @@ fun PortraitLayout() {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Button(
-                        onClick = { showSettings = true },
+                        onClick = { viewModel.showSettings = true },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 30.dp, end = 30.dp)
@@ -423,35 +426,35 @@ fun PortraitLayout() {
             }
         }
 
-        if (showSettings) {
+        if (viewModel.showSettings) {
             SettingsBottomSheet(
-                studyTime = studyTime,
-                breakTime = breakTime,
-                onStudyTimeChange = {
-                    studyTime = it
-                    if (isStudySession) {
-                        timeLeft = studyTime
-                        totalTime = studyTime
+                studyTime = viewModel.studyTime,
+                breakTime = viewModel.breakTime,
+                onstudyTimeChange = {
+                    viewModel.studyTime = it
+                    if (viewModel.isStudySession) {
+                        viewModel.timeLeft = viewModel.studyTime
+                        viewModel.totalTime = viewModel.studyTime
                     }
                 },
-                onBreakTimeChange = {
-                    breakTime = it
-                    if (!isStudySession) {
-                        timeLeft = breakTime
-                        totalTime = breakTime
+                onbreakTimeChange = {
+                    viewModel.breakTime = it
+                    if (!viewModel.isStudySession) {
+                        viewModel.timeLeft = viewModel.breakTime
+                        viewModel.totalTime = viewModel.breakTime
                     }
                 },
-                onClose = { showSettings = false },
+                onClose = { viewModel.showSettings = false },
                 onResetAll = {
-                    studyTime = 25 * 60
-                    breakTime = 5 * 60
-                    timeLeft = 25 * 60
-                    totalTime = 25 * 60
-                    sessionCount = 1
-                    isRunning = false
-                    isPaused = false
-                    isStudySession = true
-                    showSettings = false
+                    viewModel.studyTime = 25 * 60
+                    viewModel.breakTime = 5 * 60
+                    viewModel.timeLeft = 25 * 60
+                    viewModel.totalTime = 25 * 60
+                    viewModel.sessionCount = 1
+                    viewModel.isRunning = false
+                    viewModel.isPaused = false
+                    viewModel.isStudySession = true
+                    viewModel.showSettings = false
                 }
             )
         }
@@ -473,8 +476,8 @@ fun PortraitLayout() {
 fun SettingsBottomSheet(
     studyTime: Int,
     breakTime: Int,
-    onStudyTimeChange: (Int) -> Unit,
-    onBreakTimeChange: (Int) -> Unit,
+    onstudyTimeChange: (Int) -> Unit,
+    onbreakTimeChange: (Int) -> Unit,
     onClose: () -> Unit,
     onResetAll: () -> Unit
 ) {
@@ -541,11 +544,11 @@ fun SettingsBottomSheet(
                         val breakTimeValue = breakTimeInput.toIntOrNull()
 
                         if (studyTimeValue != null && studyTimeValue > 0) {
-                            onStudyTimeChange(studyTimeValue * 60)
+                            onstudyTimeChange(studyTimeValue * 60)
                         }
 
                         if (breakTimeValue != null && breakTimeValue > 0) {
-                            onBreakTimeChange(breakTimeValue * 60)
+                            onbreakTimeChange(breakTimeValue * 60)
                         }
 
                         onClose()
@@ -595,6 +598,6 @@ fun SettingsBottomSheet(
 @Composable
 fun Preview() {
     StudytimerTheme {
-        AppContent()
+        AppContent(viewModel = studyTimerViewModel())
     }
 }
