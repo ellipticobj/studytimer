@@ -12,6 +12,6 @@ then
 `cd ./studytimer && ./gradlew assembleRelease`  
 
 # roadmap
-notification with time left, current session and session count
-landscape mode?
-device lock
+notification with time left, current session and session count  
+landscape mode?  
+device lock  
